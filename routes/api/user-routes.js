@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { User } = require('../../models');
 
-// GET /api/users
+// get all users
 router.get('/', (req, res) => {
   // Access our User model and run .findAll() method
   User.findAll({
@@ -14,7 +14,7 @@ router.get('/', (req, res) => {
     });
 });
 
-// GET /api/users/1
+// get user by id
 router.get('/:id', (req, res) => {
   User.findOne({
     attributes: { exclude: ['password'] },
@@ -35,7 +35,7 @@ router.get('/:id', (req, res) => {
     });
 });
 
-// POST /api/users
+// create new user
 router.post('/', (req, res) => {
   User.create({
     username: req.body.username,
@@ -47,6 +47,29 @@ router.post('/', (req, res) => {
       console.log(err);
       res.status(500).json(err);
     });
+});
+
+// POST /api/users/login
+router.post('/login', (req, res) => {
+  User.findOne({
+    where: {
+      email: req.body.email
+    }
+  }).then(dbUserData => {
+    if (!dbUserData) {
+      res.status(400).json({ message: 'No user with that email address!' })
+      return;
+    }
+
+    // Verify user
+    const validPassword = dbUserData.checkPassword(req.body.password);
+    if (!validPassword) {
+      res.status(400).json({ message: 'Incorrect password!' });
+      return;
+    }
+
+    res.json({ user: dbUserData, message: 'Your are now logged in!' });
+  });
 });
 
 // PUT /api/users/1
